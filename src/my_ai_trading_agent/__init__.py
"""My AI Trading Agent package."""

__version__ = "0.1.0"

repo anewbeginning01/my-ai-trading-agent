@@ -1,0 +1,5 @@
+# My AI Trading Agent
+
+This project is a beginner-friendly Python tool for screening a small watchlist of liquid U.S. stocks and U.S.-listed international ETFs, checking market data quality, and generating a simple daily report.
+
+The project is intentionally simple. It does not place real orders and does not connect to any brokerage or live trading system.

@@ -1,0 +1,156 @@
+# My AI Trading Agent
+
+This project is a beginner-friendly Python example that helps you:
+
+- look at a list of liquid U.S. stocks and U.S.-listed international ETFs,
+- download market data,
+- check whether the data is recent and complete,
+- apply simple testable trade rules,
+- explain why a trade idea may be worth a look,
+- simulate a few trades without using real money,
+- record decisions in a daily report,
+- stop creating new trade ideas when risk limits are reached.
+
+This is not live trading software. It does not connect to Robinhood, Alpaca, or any brokerage. It does not place real orders.
+
+## What this project does
+
+The project is intentionally simple and clear:
+
+1. It chooses a watchlist of liquid U.S. stocks and U.S.-listed international ETFs.
+2. It downloads market data from Yahoo Finance.
+3. It checks whether the latest price data is fresh enough to trust.
+4. It looks for buy ideas using simple rules, such as:
+   - price is above a minimum value,
+   - average trading volume is healthy,
+   - price is above its 20-day moving average,
+   - recent performance is positive.
+5. It explains the reason for each idea and notes a risk.
+6. It simulates a small trade using paper money.
+7. It calculates profit, loss, and account drawdown.
+8. It stops recommending new trades if either:
+   - daily loss reaches 0.5%, or
+   - the account drops 2% below its previous peak.
+9. It writes a daily summary report.
+
+## Project structure
+
+- `src/my_ai_trading_agent/config.py` – list of tickers and basic risk settings
+- `src/my_ai_trading_agent/data.py` – downloads and validates market data
+- `src/my_ai_trading_agent/rules.py` – trade selection rules and explanations
+- `src/my_ai_trading_agent/engine.py` – portfolio simulation and risk checks
+- `src/my_ai_trading_agent/reporting.py` – creates a simple report
+- `src/my_ai_trading_agent/cli.py` – command-line entry point
+- `tests/` – automated tests for the logic
+- `.github/workflows/daily-report.yml` – GitHub Actions schedule for daily report generation
+
+## Quick start
+
+### 1) Install Python
+
+Use Python 3.11 or newer.
+
+### 2) Open a terminal
+
+In your project folder, run:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e .
+```
+
+On Windows PowerShell, use:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e .
+```
+
+### 3) Run the tests
+
+```bash
+pytest
+```
+
+This checks that the basic rules and report generation work.
+
+### 4) Generate a daily report
+
+```bash
+python -m my_ai_trading_agent.cli --daily-report
+```
+
+This will download recent market data, screen the watchlist, and write a report in the project folder.
+
+## Important notes
+
+- This project does not use real money.
+- This project does not place any orders.
+- This project is educational.
+- Market data can be delayed or incomplete, so the project does not promise profit.
+- You should treat every trade idea as a learning example, not financial advice.
+
+## Risk limits built into the project
+
+The project has built-in stop logic:
+
+- Daily loss limit: 0.5%
+- Max drawdown from prior peak: 2%
+
+If those limits are triggered, the project stops recommending new trades.
+
+## How to understand the report
+
+The report includes:
+
+- which tickers were reviewed,
+- which trade ideas passed the rules,
+- why each idea was interesting,
+- what could go wrong,
+- simulated results,
+- whether the risk limits blocked further trading.
+
+## GitHub Actions scheduling
+
+The project includes a workflow file at `.github/workflows/daily-report.yml`.
+
+It is set up to run:
+
+- on a daily schedule,
+- and on manual trigger.
+
+This means the project is ready for a scheduled report, but it is not set to place real trades.
+
+## Files you may edit
+
+- `src/my_ai_trading_agent/config.py` to change tickers or risk settings
+- `src/my_ai_trading_agent/rules.py` to tighten or loosen the trade filters
+- `src/my_ai_trading_agent/engine.py` to change the simulated portfolio logic
+- `tests/` to add more checks as you learn
+
+## Beginner tip
+
+Start by reading these in order:
+
+1. `config.py`
+2. `data.py`
+3. `rules.py`
+4. `engine.py`
+5. `reporting.py`
+6. `cli.py`
+
+That order shows how the program moves from raw market data to a final daily report.
+
+## License
+
+This project is for learning and example use.
+
+## Disclaimer
+
+This software is for educational purposes only. It is not investment advice and does not guarantee results.

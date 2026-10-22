@@ -1,0 +1,50 @@
+from pathlib import Path
+
+import pandas as pd
+
+from my_ai_trading_agent.reporting import build_daily_report
+from my_ai_trading_agent.rules import passes_trade_rules
+
+
+def _make_price_series() -> pd.DataFrame:
+    closes = [
+        95.0, 96.5, 97.8, 98.1, 99.3,
+        100.0, 101.1, 102.5, 103.2, 104.0,
+        105.1, 106.0, 106.8, 107.4, 108.5,
+        109.0, 109.6, 110.2, 111.0, 112.5,
+        112.9, 113.8, 114.5, 115.0, 116.4,
+        118.3, 119.5, 120.1, 121.0, 122.5,
+        123.6, 124.2, 125.0, 126.8, 128.1,
+        130.3, 131.0, 132.5, 133.9, 134.7,
+        135.9, 138.0, 140.2, 142.1, 143.8,
+        146.5, 148.0, 150.0, 152.4, 154.2,
+        156.0, 157.5, 158.0, 159.0, 160.5,
+        161.0, 162.2, 163.8, 165.0, 166.2,
+    ]
+    volumes = [1_200_000] * len(closes)
+    index = pd.date_range("2024-01-01", periods=len(closes), freq="D")
+    return pd.DataFrame({"Close": closes, "Volume": volumes}, index=index)
+
+
+def test_trade_rule_accepts_valid_candidate() -> None:
+    df = _make_price_series()
+    assert passes_trade_rules(df) is True
+
+
+def test_trade_rule_rejects_low_volume() -> None:
+    df = _make_price_series().copy()
+    df["Volume"] = 100_000
+    assert passes_trade_rules(df) is False
+
+
+def test_report_includes_required_keys() -> None:
+    report = build_daily_report(
+        decisions=[{"ticker": "AAPL", "action": "BUY", "reason": "Strong trend"}],
+        trades=[],
+        summary={"starting_cash": 100000, "ending_cash": 100000, "realized_pnl": 0.0},
+    )
+    assert report["decision_count"] == 1
+    assert report["summary"]["starting_cash"] == 100000
+    assert report["trades"] == []
+
+

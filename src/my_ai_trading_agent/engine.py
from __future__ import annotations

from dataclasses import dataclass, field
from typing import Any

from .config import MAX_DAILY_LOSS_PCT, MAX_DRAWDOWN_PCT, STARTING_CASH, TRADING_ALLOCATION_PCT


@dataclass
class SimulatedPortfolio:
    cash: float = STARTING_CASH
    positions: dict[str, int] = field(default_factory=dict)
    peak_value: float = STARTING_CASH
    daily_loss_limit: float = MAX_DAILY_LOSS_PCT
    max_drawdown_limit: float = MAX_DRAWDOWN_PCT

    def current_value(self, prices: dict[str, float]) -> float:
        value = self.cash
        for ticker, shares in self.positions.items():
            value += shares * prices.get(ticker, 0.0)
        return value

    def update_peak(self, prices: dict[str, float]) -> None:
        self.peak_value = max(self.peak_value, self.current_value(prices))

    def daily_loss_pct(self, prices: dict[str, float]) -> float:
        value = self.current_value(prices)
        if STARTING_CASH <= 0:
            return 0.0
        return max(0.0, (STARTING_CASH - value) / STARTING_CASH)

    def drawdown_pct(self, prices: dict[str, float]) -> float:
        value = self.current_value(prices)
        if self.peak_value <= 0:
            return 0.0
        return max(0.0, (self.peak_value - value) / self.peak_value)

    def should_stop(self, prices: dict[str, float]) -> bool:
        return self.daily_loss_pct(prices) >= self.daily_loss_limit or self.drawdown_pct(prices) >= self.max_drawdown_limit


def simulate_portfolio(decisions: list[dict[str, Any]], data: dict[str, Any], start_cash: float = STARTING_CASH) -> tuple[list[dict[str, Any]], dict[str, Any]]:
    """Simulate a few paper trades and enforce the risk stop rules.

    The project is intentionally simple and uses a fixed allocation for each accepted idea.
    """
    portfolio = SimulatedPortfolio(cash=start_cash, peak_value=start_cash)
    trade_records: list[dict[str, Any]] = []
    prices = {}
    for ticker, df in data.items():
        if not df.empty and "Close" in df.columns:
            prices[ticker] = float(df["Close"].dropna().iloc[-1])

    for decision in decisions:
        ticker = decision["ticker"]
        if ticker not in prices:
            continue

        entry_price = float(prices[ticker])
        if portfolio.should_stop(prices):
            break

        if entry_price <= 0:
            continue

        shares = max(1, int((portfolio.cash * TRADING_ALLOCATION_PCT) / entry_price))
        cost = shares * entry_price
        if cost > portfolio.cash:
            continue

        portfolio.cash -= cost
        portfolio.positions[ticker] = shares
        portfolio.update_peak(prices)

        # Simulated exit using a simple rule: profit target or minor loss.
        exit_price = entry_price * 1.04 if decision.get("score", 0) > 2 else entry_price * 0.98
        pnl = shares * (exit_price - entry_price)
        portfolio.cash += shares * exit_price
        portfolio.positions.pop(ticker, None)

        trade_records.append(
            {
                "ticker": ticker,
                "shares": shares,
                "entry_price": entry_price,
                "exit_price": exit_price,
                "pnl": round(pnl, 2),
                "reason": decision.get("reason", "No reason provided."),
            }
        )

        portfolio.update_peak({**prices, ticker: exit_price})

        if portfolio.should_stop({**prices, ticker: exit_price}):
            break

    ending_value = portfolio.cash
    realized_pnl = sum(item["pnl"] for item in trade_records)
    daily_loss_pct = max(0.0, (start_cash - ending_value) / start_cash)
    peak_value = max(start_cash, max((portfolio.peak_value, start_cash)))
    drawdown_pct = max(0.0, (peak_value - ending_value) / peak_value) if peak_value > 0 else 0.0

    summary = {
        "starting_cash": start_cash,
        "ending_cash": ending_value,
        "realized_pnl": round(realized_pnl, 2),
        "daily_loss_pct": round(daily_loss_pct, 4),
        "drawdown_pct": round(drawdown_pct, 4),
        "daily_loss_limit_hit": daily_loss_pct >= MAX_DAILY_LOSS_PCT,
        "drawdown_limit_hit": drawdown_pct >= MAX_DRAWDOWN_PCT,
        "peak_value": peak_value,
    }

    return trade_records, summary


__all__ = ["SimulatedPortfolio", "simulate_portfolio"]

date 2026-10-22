@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from .config import DEFAULT_TICKERS, STARTING_CASH
+from .data import prepare_market_data
+from .engine import simulate_portfolio
+from .reporting import build_daily_report, render_report_markdown
+from .rules import screen_candidates
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Generate a simple daily trading report.")
+    parser.add_argument("--daily-report", action="store_true", help="Generate a simple daily report without placing live orders.")
+    parser.add_argument("--report-path", default="daily_report.md", help="Where to save the markdown report.")
+    return parser
+
+
+def main() -> None:
+    parser = _build_parser()
+    args = parser.parse_args()
+
+    if not args.daily_report:
+        print("This project is for paper-trading research. Use --daily-report to generate a report.")
+        return
+
+    data, issues = prepare_market_data(DEFAULT_TICKERS)
+    candidates = screen_candidates(data)
+    trades, summary = simulate_portfolio(candidates, data, start_cash=STARTING_CASH)
+    report = build_daily_report(candidates, trades, summary)
+
+    write_path = Path(args.report_path)
+    write_path.write_text(render_report_markdown(report), encoding="utf-8")
+
+    print(f"Generated report at: {write_path.resolve()}")
+    print(json.dumps({"issues": issues, "candidates": candidates}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
+

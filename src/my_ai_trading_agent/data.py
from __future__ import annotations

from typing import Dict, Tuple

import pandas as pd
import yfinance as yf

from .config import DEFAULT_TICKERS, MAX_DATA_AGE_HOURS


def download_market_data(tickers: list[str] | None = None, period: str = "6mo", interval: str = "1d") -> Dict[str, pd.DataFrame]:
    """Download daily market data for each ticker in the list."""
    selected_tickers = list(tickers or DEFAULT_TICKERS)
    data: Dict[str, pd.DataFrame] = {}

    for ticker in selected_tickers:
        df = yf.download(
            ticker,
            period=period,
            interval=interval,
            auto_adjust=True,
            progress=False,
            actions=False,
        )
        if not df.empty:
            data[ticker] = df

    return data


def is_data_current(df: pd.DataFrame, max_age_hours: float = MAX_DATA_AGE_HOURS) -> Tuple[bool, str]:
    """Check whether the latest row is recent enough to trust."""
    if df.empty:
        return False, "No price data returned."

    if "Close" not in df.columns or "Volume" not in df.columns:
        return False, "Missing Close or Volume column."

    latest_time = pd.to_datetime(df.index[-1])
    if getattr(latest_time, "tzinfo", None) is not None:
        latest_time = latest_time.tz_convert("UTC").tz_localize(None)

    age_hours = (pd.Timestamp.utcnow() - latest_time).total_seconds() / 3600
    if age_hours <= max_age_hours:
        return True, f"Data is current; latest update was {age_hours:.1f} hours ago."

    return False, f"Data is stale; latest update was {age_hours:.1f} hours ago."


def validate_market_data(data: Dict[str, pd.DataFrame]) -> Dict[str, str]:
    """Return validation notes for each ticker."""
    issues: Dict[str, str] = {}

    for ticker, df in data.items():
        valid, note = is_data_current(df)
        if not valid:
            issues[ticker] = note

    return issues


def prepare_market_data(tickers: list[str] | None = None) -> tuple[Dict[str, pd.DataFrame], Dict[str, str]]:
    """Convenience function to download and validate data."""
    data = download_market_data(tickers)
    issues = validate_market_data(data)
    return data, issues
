@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+DEFAULT_TICKERS = [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "META",
+    "AVGO",
+    "JPM",
+    "V",
+    "XOM",
+    "QQQ",
+    "SPY",
+    "SCHD",
+    "IVV",
+    "VWO",
+    "VEA",
+    "VXUS",
+    "EFA",
+    "IEMG",
+    "EWJ",
+    "IEUR",
+]
+
+MIN_PRICE = 10.0
+MIN_AVERAGE_VOLUME = 500_000.0
+MAX_DAILY_LOSS_PCT = 0.005
+MAX_DRAWDOWN_PCT = 0.02
+MAX_DATA_AGE_HOURS = 30
+
+STARTING_CASH = 100_000.0
+TRADING_ALLOCATION_PCT = 0.10

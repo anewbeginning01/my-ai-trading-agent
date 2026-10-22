@@ -1,0 +1,138 @@
+from __future__ import annotations
+
+import math
+from typing import Any
+
+import pandas as pd
+
+from .config import MIN_AVERAGE_VOLUME, MIN_PRICE
+
+
+def _safe_mean(series: pd.Series) -> float:
+    values = pd.to_numeric(series, errors="coerce").dropna()
+    return float(values.mean()) if not values.empty else 0.0
+
+
+def _percent_change(start: float, end: float) -> float:
+    if start == 0:
+        return 0.0
+    return (end - start) / start
+
+
+def passes_trade_rules(df: pd.DataFrame) -> bool:
+    """A simple, testable trade filter.
+
+    A ticker can pass if:
+    - price is above a minimum level,
+    - average trading volume is healthy,
+    - current price stays above its 20-day simple moving average,
+    - price has improved over the short term.
+    """
+    if df is None or df.empty:
+        return False
+
+    required = {"Close", "Volume"}
+    if not required.issubset(df.columns):
+        return False
+
+    closes = pd.to_numeric(df["Close"], errors="coerce").dropna()
+    volumes = pd.to_numeric(df["Volume"], errors="coerce").dropna()
+
+    if len(closes) < 22 or len(volumes) < 20:
+        return False
+
+    last_close = float(closes.iloc[-1])
+    avg_volume = float(volumes.tail(20).mean())
+    sma_20 = float(closes.rolling(20).mean().iloc[-1])
+    recent_close_5d = float(closes.iloc[-5]) if len(closes) >= 5 else float(closes.iloc[0])
+    recent_close_21d = float(closes.iloc[-21]) if len(closes) >= 21 else float(closes.iloc[0])
+
+    five_day_return = _percent_change(recent_close_5d, last_close)
+    month_return = _percent_change(recent_close_21d, last_close)
+
+    if last_close <= MIN_PRICE:
+        return False
+    if avg_volume < MIN_AVERAGE_VOLUME:
+        return False
+    if last_close <= sma_20:
+        return False
+    if five_day_return <= 0.0:
+        return False
+    if month_return <= 0.02:
+        return False
+
+    return True
+
+
+def score_candidate(df: pd.DataFrame) -> float:
+    """Give a simple numeric score so candidates can be ranked."""
+    if df is None or df.empty:
+        return 0.0
+
+    closes = pd.to_numeric(df["Close"], errors="coerce").dropna()
+    if len(closes) < 22:
+        return 0.0
+
+    last_close = float(closes.iloc[-1])
+    sma_20 = float(closes.rolling(20).mean().iloc[-1])
+    recent_close_5d = float(closes.iloc[-5]) if len(closes) >= 5 else float(closes.iloc[0])
+    recent_close_21d = float(closes.iloc[-21]) if len(closes) >= 21 else float(closes.iloc[0])
+
+    five_day_return = _percent_change(recent_close_5d, last_close)
+    month_return = _percent_change(recent_close_21d, last_close)
+    price_ratio = last_close / sma_20 if sma_20 > 0 else 1.0
+    score = (five_day_return * 100) + (month_return * 100) + ((price_ratio - 1.0) * 100)
+    return round(score, 2)
+
+
+def build_decision(ticker: str, df: pd.DataFrame) -> dict[str, Any]:
+    """Create a simple, readable decision record."""
+    if df is None or df.empty:
+        return {"ticker": ticker, "action": "SKIP", "reason": "No data available."}
+
+    closes = pd.to_numeric(df["Close"], errors="coerce").dropna()
+    volumes = pd.to_numeric(df["Volume"], errors="coerce").dropna()
+    last_close = float(closes.iloc[-1])
+    avg_volume = float(volumes.tail(20).mean())
+    sma_20 = float(closes.rolling(20).mean().iloc[-1])
+    five_day_return = _percent_change(float(closes.iloc[-5]), last_close)
+    month_return = _percent_change(float(closes.iloc[-21]), last_close)
+
+    if not passes_trade_rules(df):
+        return {
+            "ticker": ticker,
+            "action": "SKIP",
+            "reason": "The stock or ETF does not meet the basic trend, volume, or price test.",
+            "risk_note": "No clear opportunity met the rules, so the project avoids trading.",
+        }
+
+    return {
+        "ticker": ticker,
+        "action": "BUY",
+        "entry_price": last_close,
+        "score": score_candidate(df),
+        "reason": (
+            f"Price is ${last_close:.2f}, above its 20-day average of ${sma_20:.2f}, "
+            f"average volume is {avg_volume:,.0f}, and the 5-day return is {five_day_return:.2%}."
+        ),
+        "risk_note": (
+            "This trade may be attractive because momentum is positive, but a sudden drop in volume or a weak market can "
+            "cause losses. The trade is only considered because it passed a simple rule set."
+        ),
+    }
+
+
+def screen_candidates(data: dict[str, pd.DataFrame]) -> list[dict[str, Any]]:
+    """Return a ranked list of passable buy candidates."""
+    candidates: list[dict[str, Any]] = []
+
+    for ticker, df in data.items():
+        decision = build_decision(ticker, df)
+        if decision.get("action") == "BUY":
+            candidates.append(decision)
+
+    return sorted(candidates, key=lambda item: float(item.get("score", 0.0)), reverse=True)
+
+
+__all__ = ["passes_trade_rules", "score_candidate", "build_decision", "screen_candidates"]
+																																																																																																																																																																																																																																																																																																																				
