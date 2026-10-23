@@ -3,17 +3,30 @@ name: Test AI Trading Agent
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test-agent:
     runs-on: ubuntu-latest
     steps:
-      - name: Get repository code
+      - name: Check out this repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Check project files
+        run: |
+          echo "Checking the repository files..."
+          ls -la
+          test -f main.py
+          test -f requirements.txt
+          echo "Both required files were found."
 
       - name: Run safe starter program
         run: python main.py
