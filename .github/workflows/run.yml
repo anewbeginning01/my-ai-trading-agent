@@ -1,6 +1,6 @@
 name: Run trading bot
 on:
-  push:
+  
   schedule:
     - cron: "45 15 * * 1-5"
   workflow_dispatch:
